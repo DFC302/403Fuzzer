@@ -188,7 +188,7 @@ def send_header_attack(s, url, method, headers, body_data, cookies, payload):
 
         try:
             # has fragmemnts in url at this point
-            response = s.send(req)
+            response = s.send(req, follow_redirects=True)
             success = True
 
         except Exception as e:
@@ -220,7 +220,7 @@ def send_url_attack(s, payload, method, headers, body_data, cookies):
 
         try:
             # has fragmemnts in url at this point
-            response = s.send(req)
+            response = s.send(req, follow_redirects=True)
             success = True
 
         except Exception as e:
@@ -247,6 +247,7 @@ def send_method_attack(s, url, method, headers, body_data, cookies):
                 data=body_data,
                 cookies=cookies,
                 headers=clean_headers(headers),
+                follow_redirects=True
             )
 
             success = True
@@ -285,6 +286,7 @@ def send_method_override_header(s, url, override_header, override_method, header
                 data=body_data,
                 cookies=cookies,
                 headers=clean_headers(headers),
+                follow_redirects=True
             )
 
             success = True
@@ -329,7 +331,7 @@ def send_method_override_parameter(s, url, override_param, override_method, head
 
         try:
             # has fragmemnts in url at this point
-            response = s.send(req)
+            response = s.send(req, follow_redirects=True)
             success = True
 
         except Exception as e:
@@ -356,6 +358,7 @@ def send_http_proto_attack(s, url, method, headers, body_data, cookies):
                 data=body_data,
                 cookies=cookies,
                 headers=clean_headers({}),
+                follow_redirects=True
             )
 
             success = True
