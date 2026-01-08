@@ -4,6 +4,11 @@ from random import choice
 from urllib.parse import urlsplit, urlunsplit
 
 
+def clean_headers(headers):
+    """Remove None values from headers dict - httpx doesn't accept None values"""
+    return {k: v for k, v in headers.items() if v is not None}
+
+
 def setup_url_payloads(url, url_payloads_file):
     """Set up URL & path payloads"""
 
@@ -170,7 +175,7 @@ def send_header_attack(s, url, method, headers, body_data, cookies, payload):
     headers[hdr] = payload.split(" ")[1]
 
     req = s.build_request(
-        method=method, url=url, data=body_data, cookies=cookies, headers=headers
+        method=method, url=url, data=body_data, cookies=cookies, headers=clean_headers(headers)
     )
 
     success, retry = False, 1
@@ -202,7 +207,7 @@ def send_header_attack(s, url, method, headers, body_data, cookies, payload):
 
 def send_url_attack(s, payload, method, headers, body_data, cookies):
     req = s.build_request(
-        method=method, url=payload, data=body_data, cookies=cookies, headers=headers
+        method=method, url=payload, data=body_data, cookies=cookies, headers=clean_headers(headers)
     )
 
     success, retry = False, 1
@@ -241,7 +246,7 @@ def send_method_attack(s, url, method, headers, body_data, cookies):
                 url,
                 data=body_data,
                 cookies=cookies,
-                headers=headers,
+                headers=clean_headers(headers),
             )
 
             success = True
@@ -279,7 +284,7 @@ def send_method_override_header(s, url, override_header, override_method, header
                 url,
                 data=body_data,
                 cookies=cookies,
-                headers=headers,
+                headers=clean_headers(headers),
             )
 
             success = True
@@ -311,7 +316,7 @@ def send_method_override_parameter(s, url, override_param, override_method, head
 
     url = urlunsplit(parsed)
     req = s.build_request(
-        method="POST", url=url, data=body_data, cookies=cookies, headers=headers
+        method="POST", url=url, data=body_data, cookies=cookies, headers=clean_headers(headers)
     )
 
     success, retry = False, 1
@@ -350,7 +355,7 @@ def send_http_proto_attack(s, url, method, headers, body_data, cookies):
                 url,
                 data=body_data,
                 cookies=cookies,
-                headers={},
+                headers=clean_headers({}),
             )
 
             success = True
