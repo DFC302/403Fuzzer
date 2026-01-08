@@ -35,13 +35,22 @@ class DatabaseHandler:
 
     def save_interaction(self, payload_index, request, response, payload):
         cursor = self.conn.cursor()
-        if request.body is not None:
-            if isinstance(request.body, bytes):
-                request_body = request.body.decode('utf-8') if request.body else ''
-            elif isinstance(request.body, str):
-                request_body = request.body if request.body else ''
+
+        # httpx uses 'content' attribute, requests uses 'body'
+        body_data = getattr(request, 'content', None) or getattr(request, 'body', None)
+
+        if body_data is not None:
+            if isinstance(body_data, bytes):
+                request_body = body_data.decode('utf-8', errors='ignore') if body_data else ''
+            elif isinstance(body_data, str):
+                request_body = body_data if body_data else ''
+            else:
+                request_body = str(body_data)
         else:
             request_body = ''
+
+        # httpx.URL is an object, need to convert to string
+        url_str = str(request.url)
 
         cursor.execute('''
             INSERT INTO interactions (id, timestamp, payload, url, method, request_headers, request_body, status_code, response_headers, response_body)
@@ -50,7 +59,7 @@ class DatabaseHandler:
             payload_index,
             datetime.now().isoformat(),
             payload,
-            request.url,
+            url_str,
             request.method,
             str(dict(request.headers)),
             request_body,
