@@ -439,12 +439,17 @@ class BypassFuzzer:
         
         override_methods = [
             "GET",
-            "PUT"
+            "PUT",
+            "DELETE",
+            "PATCH",
+            "OPTIONS",
+            "HEAD"
         ]
         override_method_headers = [
             "X-HTTP-Method-Override",
-            "X-Method-Override"
+            "X-Method-Override",
             "X-HTTP-Method",
+            "X-Method",
         ]
         override_method_parameters = [
             "x-http-method-override",
