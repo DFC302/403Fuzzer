@@ -4,7 +4,7 @@ import os
 import threading
 import time
 import colorama
-import requests
+import httpx
 from core.fuzzer.filter import SmartFilter
 from core.fuzzer import funcs
 from core.fuzzer.db_handler import DatabaseHandler
@@ -221,16 +221,14 @@ class BypassFuzzer:
         """
         print("Attacking with header payloads...")
 
-        if http_vers == "HTTP/2":
-            print(
-                "NOTE: HTTP/2 was detected in your original request, but I can only do HTTP/1.1 for now."
-            )
-
         if self.filter:
             self.filter.db = {}
 
-        session = requests.Session()
-        session.proxies = self.proxies
+        session = httpx.Client(
+            http2=(http_vers == "HTTP/2"),
+            proxies=self.proxies,
+            verify=False
+        )
 
         # preserve the original headers incase of an error
         og_headers = headers.copy()
@@ -249,7 +247,9 @@ class BypassFuzzer:
             else:
                 headers = og_headers.copy()  # reset headers when there's an error
 
-            self.payload_index += 1        
+            self.payload_index += 1
+
+        session.close()
 
     def trail_slash(self, method, http_vers, headers, body_data, cookies):
         """If the URL is: https://example.com/test/test2
@@ -259,16 +259,14 @@ class BypassFuzzer:
         """
         print("\nTrailing slash technique...")
 
-        if http_vers == "HTTP/2":
-            print(
-                "NOTE: HTTP/2 was detected in your original request, but I can only do HTTP/1.1 for now."
-            )
-
         if self.filter:
             self.filter.db = {}
 
-        session = requests.Session()
-        session.proxies = self.proxies
+        session = httpx.Client(
+            http2=(http_vers == "HTTP/2"),
+            proxies=self.proxies,
+            verify=False
+        )
         parsed = urlsplit(self.url)
 
         if parsed.path[-1] == "/":
@@ -288,8 +286,9 @@ class BypassFuzzer:
             self.show_results(response, payload, self.hide, show_resp_headers=False)
             if response.status_code in self.save_interactions:
                 self.db_handler.save_interaction(self.payload_index, response.request, response, payload)
-            
+
         self.payload_index += 1
+        session.close()
 
     def path_attack(self, method, http_vers, headers, body_data, cookies):
         """
@@ -297,16 +296,14 @@ class BypassFuzzer:
         """
         print("\n\nAttacking via URL & path...")
 
-        if http_vers == "HTTP/2":
-            print(
-                "NOTE: HTTP/2 was detected in your original request, but I can only do HTTP/1.1 for now."
-            )
-
         if self.filter:
             self.filter.db = {}
 
-        session = requests.Session()
-        session.proxies = self.proxies
+        session = httpx.Client(
+            http2=(http_vers == "HTTP/2"),
+            proxies=self.proxies,
+            verify=False
+        )
 
         for payload in self.url_payloads:
             self.pause_if_needed()
@@ -332,21 +329,22 @@ class BypassFuzzer:
 
             self.payload_index += 1
 
+        session.close()
+
     def trailing_dot_attack(self, method, http_vers, headers, body_data, cookies):
         """
         Attack with absolute domain
         """
         print("\n\nTrailing dot attack...")
-        if http_vers == "HTTP/2":
-            print(
-                "NOTE: HTTP/2 was detected in your original request, but I can only do HTTP/1.1 for now."
-            )
 
         if self.filter:
             self.filter.db = {}
 
-        session = requests.Session()
-        session.proxies = self.proxies
+        session = httpx.Client(
+            http2=(http_vers == "HTTP/2"),
+            proxies=self.proxies,
+            verify=False
+        )
 
         parsed = urlsplit(self.url)
 
@@ -361,15 +359,12 @@ class BypassFuzzer:
         url = urlunsplit(parsed)
         headers["Host"] = absolute_domain
 
-        req = requests.Request(
-            url=url, method=method, data=body_data, cookies=cookies, headers=headers
+        req = session.build_request(
+            method=method, url=url, data=body_data, cookies=cookies, headers=headers
         )
 
-        prep = session.prepare_request(req)
-        prep.url = url
-
         print("Sending payload with absolute domain...")
-        payload = prep.url
+        payload = url
         success, retry = False, 0
         while not success:
             if retry > 2:
@@ -377,7 +372,7 @@ class BypassFuzzer:
                 break
 
             try:
-                response = session.send(prep, verify=False)
+                response = session.send(req)
 
                 if response is not None:
                     success = True
@@ -388,12 +383,14 @@ class BypassFuzzer:
 
                 self.payload_index += 1
 
-            except requests.exceptions.RequestException as e:
+            except httpx.HTTPError as e:
                 print(f"Path payload causing a hang-up: {payload}")
                 print(f"Error I get: \n\t{e}")
                 print("Retrying...")
 
             retry += 1
+
+        session.close()
 
 
     def verb_attack(self, method, http_vers, headers, body_data, cookies):
@@ -402,16 +399,14 @@ class BypassFuzzer:
         """
         print("\n\nAttacking via different verbs...")
 
-        if http_vers == "HTTP/2":
-            print(
-                "NOTE: HTTP/2 was detected in your original request, but I can only do HTTP/1.1 for now."
-            )
-
         if self.filter:
             self.filter.db = {}
 
-        session = requests.Session()
-        session.proxies = self.proxies
+        session = httpx.Client(
+            http2=(http_vers == "HTTP/2"),
+            proxies=self.proxies,
+            verify=False
+        )
 
         methods = [
             "OPTIONS",
@@ -487,8 +482,10 @@ class BypassFuzzer:
                     self.show_results(response, payload, self.hide, show_resp_headers=True)
                     if response.status_code in self.save_interactions:
                         self.db_handler.save_interaction(self.payload_index, response.request, response, payload)
-                
+
                 self.payload_index += 1
+
+        session.close()
 
 
     def http_proto_attack(self, method, headers, body_data, cookies):
@@ -502,9 +499,11 @@ class BypassFuzzer:
         if self.filter:
             self.filter.db = {}
 
-        session = requests.Session()
-        session.proxies = self.proxies
-        session.headers.clear()
+        session = httpx.Client(
+            http2=False,
+            proxies=self.proxies,
+            verify=False
+        )
 
         for http_vers in ["HTTP/1.0", "HTTP/0.9"]:
             HTTPConnection._http_vsn_str = http_vers
@@ -519,3 +518,5 @@ class BypassFuzzer:
                     self.db_handler.save_interaction(self.payload_index, response.request, response, http_vers)
 
             self.payload_index += 1
+
+        session.close()

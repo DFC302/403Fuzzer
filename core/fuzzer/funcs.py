@@ -1,4 +1,4 @@
-import requests
+import httpx
 
 from random import choice
 from urllib.parse import urlsplit, urlunsplit
@@ -169,12 +169,9 @@ def send_header_attack(s, url, method, headers, body_data, cookies, payload):
 
     headers[hdr] = payload.split(" ")[1]
 
-    req = requests.Request(
-        url=url, method=method, data=body_data, cookies=cookies, headers=headers
+    req = s.build_request(
+        method=method, url=url, data=body_data, cookies=cookies, headers=headers
     )
-
-    prep = s.prepare_request(req)
-    prep.url = url
 
     success, retry = False, 1
     last_error = None
@@ -186,7 +183,7 @@ def send_header_attack(s, url, method, headers, body_data, cookies, payload):
 
         try:
             # has fragmemnts in url at this point
-            response = s.send(prep, verify=False, allow_redirects=False)
+            response = s.send(req)
             success = True
 
         except Exception as e:
@@ -204,12 +201,9 @@ def send_header_attack(s, url, method, headers, body_data, cookies, payload):
 
 
 def send_url_attack(s, payload, method, headers, body_data, cookies):
-    req = requests.Request(
-        url=payload, method=method, data=body_data, cookies=cookies, headers=headers
+    req = s.build_request(
+        method=method, url=payload, data=body_data, cookies=cookies, headers=headers
     )
-
-    prep = s.prepare_request(req)
-    prep.url = payload
 
     success, retry = False, 1
     last_error = None
@@ -221,7 +215,7 @@ def send_url_attack(s, payload, method, headers, body_data, cookies):
 
         try:
             # has fragmemnts in url at this point
-            response = s.send(prep, verify=False, allow_redirects=False)
+            response = s.send(req)
             success = True
 
         except Exception as e:
@@ -248,8 +242,6 @@ def send_method_attack(s, url, method, headers, body_data, cookies):
                 data=body_data,
                 cookies=cookies,
                 headers=headers,
-                verify=False,
-                allow_redirects=False,
             )
 
             success = True
@@ -265,7 +257,7 @@ def send_method_attack(s, url, method, headers, body_data, cookies):
 
 def send_method_override_header(s, url, override_header, override_method, headers, body_data, cookies):
     hdr = override_header
-    
+
     # preserve existing header value
     preserve_header_value = None
     if hdr in headers:
@@ -288,8 +280,6 @@ def send_method_override_header(s, url, override_header, override_method, header
                 data=body_data,
                 cookies=cookies,
                 headers=headers,
-                verify=False,
-                allow_redirects=False,
             )
 
             success = True
@@ -318,14 +308,11 @@ def send_method_override_parameter(s, url, override_param, override_method, head
     else:
         payload = f"?{payload}"
     parsed = parsed._replace(query=f"{parsed.query}{payload}")
-    
-    url = urlunsplit(parsed)
-    req = requests.Request(
-        url=url, method="POST", data=body_data, cookies=cookies, headers=headers
-    )
 
-    prep = s.prepare_request(req)
-    prep.url = url
+    url = urlunsplit(parsed)
+    req = s.build_request(
+        method="POST", url=url, data=body_data, cookies=cookies, headers=headers
+    )
 
     success, retry = False, 1
     last_error = None
@@ -337,7 +324,7 @@ def send_method_override_parameter(s, url, override_param, override_method, head
 
         try:
             # has fragmemnts in url at this point
-            response = s.send(prep, verify=False, allow_redirects=False)
+            response = s.send(req)
             success = True
 
         except Exception as e:
@@ -350,12 +337,6 @@ def send_method_override_parameter(s, url, override_param, override_method, head
 
 
 def send_http_proto_attack(s, url, method, headers, body_data, cookies):
-    req = requests.Request(method, url, data=body_data, cookies=cookies)
-    prep = s.prepare_request(req)
-
-    # Remove headers. These are 1 line protocols.
-    prep.headers = {}
-
     success, retry = False, 1
     last_error = None
     while not success:
@@ -370,8 +351,6 @@ def send_http_proto_attack(s, url, method, headers, body_data, cookies):
                 data=body_data,
                 cookies=cookies,
                 headers={},
-                verify=False,
-                allow_redirects=False,
             )
 
             success = True

@@ -2,15 +2,18 @@
 
 import sys
 import os
+
+# Ensure local core module is imported instead of any other core module in sys.path
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, SCRIPT_DIR)
+
 import argparse
-import requests
+import httpx
 
 from core import funcs
 from core.fuzzer.fuzzer import BypassFuzzer
 from core.http_reqs.http_req import HTTPRequestReader
 
-
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PAYLOADS_DIR = f"{SCRIPT_DIR}/core/payloads"
 HDR_PAYLOADS_TEMPLATE = f"{PAYLOADS_DIR}/header_payload_templates.txt"
 IP_PAYLOADS_FILE = f"{PAYLOADS_DIR}/ip_payloads.txt"
@@ -22,8 +25,6 @@ with open(f"{SCRIPT_DIR}/core/banner.txt", "r", encoding="UTF-8") as inf:
     BANNER = inf.read()
 
 print(BANNER)
-
-requests.packages.urllib3.disable_warnings()
 
 parser = argparse.ArgumentParser(
     description="use this script to fuzz endpoints that return a 401/403"
