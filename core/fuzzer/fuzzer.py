@@ -187,6 +187,10 @@ class BypassFuzzer:
         content_type = response.headers.get("Content-Type", "N/A")
         msg = f"I: {self.payload_index}\t Response Code: {response.status_code}\tLength: {len(response.text)}\tType: {content_type}\tPayload: {payload}"
 
+        # Check if we should hide error responses (--success-only flag)
+        if hide.get("success_only", False) and response.status_code >= 400:
+            return  # Skip error responses when success_only is enabled
+
         if response.status_code > 400:  # errors
             msg = self.colors["red"] + msg
         elif response.status_code >= 300 and response.status_code < 400:  # redirects
