@@ -470,9 +470,14 @@ class BypassFuzzer:
                 )
 
                 if response is not None:
-                    self.show_results(response, om, self.hide, show_resp_headers=True)
+                    payload_display = f"{omh}: {om}"
+                    self.show_results(response, payload_display, self.hide, show_resp_headers=True)
+                    if response.status_code in self.save_interactions:
+                        self.db_handler.save_interaction(self.payload_index, response.request, response, payload_display)
                 else:
                     headers = og_headers.copy()  # reset headers when there's an error
+
+                self.payload_index += 1
         
         print("\n\nAttacking via METHOD OVERRIDE parameter...")
         for mop in override_method_parameters:
