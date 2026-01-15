@@ -33,7 +33,7 @@ parser = argparse.ArgumentParser(
 # Input & request params
 parser.add_argument(
     "-u", "--url", action="store", default=None, dest="url",
-    help="Specify the target URL",
+    help="Specify the target URL (can also be piped via stdin)",
 )
 parser.add_argument(
     "-hv", "--http-vers", action="store", default="HTTP/1.1", dest="http_vers",
@@ -195,7 +195,16 @@ else:
     # If we're not using a request from a file, we are using the URL from the -u flag.
     # https://example.com/test/test2?p1=1&p2=2
     req_method = args.method
-    url = args.url
+
+    # Support reading URL from stdin (e.g., echo "https://example.com" | bypassfuzzer.py)
+    if args.url:
+        url = args.url
+    elif not sys.stdin.isatty():
+        # Read only the first line to handle multiple URLs gracefully
+        url = sys.stdin.readline().strip()
+    else:
+        url = None  # Will be validated later if needed for fuzzing
+
     http_vers = args.http_vers
     cookies = funcs.parse_cookies(args.cookies) if args.cookies else {}
     body_data = args.data_params
@@ -238,6 +247,11 @@ if __name__ == "__main__":
             sys.exit(1)
         
         sys.exit(0)
+
+    # Validate URL before fuzzing
+    if not url:
+        print("Error: No URL provided. Use -u flag or pipe a URL via stdin.")
+        sys.exit(1)
 
     # Set up the fuzzer for attack
     Fuzzer = BypassFuzzer(
