@@ -44,8 +44,8 @@ parser.add_argument(
     help="Specify the URL scheme e.g. 'https', 'http', etc. Defaults to https.",
 )
 parser.add_argument(
-    "-m", "--method", action="store", default="GET", dest="method", 
-    choices=("GET", "POST", "PUT", "PATCH", "DELETE"),
+    "-m", "--method", action="store", default="GET", dest="method",
+    choices=("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS", "TRACE"),
     help="Specify the HTTP method/verb",
 )
 parser.add_argument(

@@ -77,10 +77,16 @@ some examples:
 ```
 
 **Specify a method/verb and body data to send**
+
+Supported methods: `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, `OPTIONS`, `TRACE`
+
 ```bash
 bypassfuzzer.py -u https://example.com/forbidden -m POST -d "param1=blah&param2=blah2"
 bypassfuzzer.py -u https://example.com/forbidden -m PUT -d "param1=blah&param2=blah2"
+bypassfuzzer.py -u https://example.com/forbidden -m TRACE
 ```
+
+**Note:** The verb attack (`-sm` to skip) automatically tests additional methods including `LOCK`, `CONNECT`, `PROPFIND`, and arbitrary methods to detect misconfigurations.
 
 **Specify custom headers to use with every request**
 Maybe you need to add some kind of auth header like `Authorization: bearer <token>`

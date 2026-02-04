@@ -415,11 +415,12 @@ class BypassFuzzer:
             "PUT",
             "PATCH",
             "DELETE",
+            "HEAD",
             "TRACE",
             "LOCK",
             "CONNECT",
             "PROPFIND",
-            "HACK",
+            "GORP",
         ]
 
         for method in methods:
