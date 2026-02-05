@@ -100,7 +100,7 @@ class DatabaseHandler:
                 body_flag = f"  -d '{escaped_body}'"
 
         # Assemble curl command
-        parts = [f'curl -k -X {method}']
+        parts = [f'curl -k --compressed -X {method}']
         parts.extend(header_flags)
         if body_flag:
             parts.append(body_flag)
